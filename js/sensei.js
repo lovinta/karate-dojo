@@ -62,7 +62,7 @@ class Sensei {
     const apiKey = process.env.ELEVENLABS_API_KEY || process.env.REACT_APP_ELEVENLABS_API_KEY || '';
     
     if (!apiKey) {
-      console.warn('ElevenLabs API key not found');
+      console.warn('Kunci API ElevenLabs tidak ditemukan');
       // Fallback: just show speech bubble
       setTimeout(() => {
         this.speechVisible = false;
@@ -90,7 +90,7 @@ class Sensei {
       });
       
       if (!response.ok) {
-        throw new Error('TTS request failed');
+        throw new Error('Permintaan TTS gagal');
       }
       
       const audioBlob = await response.blob();
@@ -111,7 +111,7 @@ class Sensei {
       }, 5000);
       
     } catch (error) {
-      console.error('TTS error:', error);
+      console.error('Kesalahan TTS:', error);
       // Fallback: just show speech bubble
       setTimeout(() => {
         this.speechVisible = false;

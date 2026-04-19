@@ -41,9 +41,9 @@ class AudioManager {
       this.sfxGain.connect(this.masterGain);
 
       this.initialized = true;
-      console.log('AudioManager initialized');
+      console.log('AudioManager berjalan');
     } catch (e) {
-      console.warn('Web Audio API not supported:', e);
+      console.warn('Web Audio API tidak didukung:', e);
     }
   }
 
@@ -123,7 +123,7 @@ class AudioManager {
         this.playGameOverTone();
         break;
       default:
-        console.warn('Unknown sound type:', type);
+        console.warn('Tipe suara tidak dikenal:', type);
     }
   }
 
