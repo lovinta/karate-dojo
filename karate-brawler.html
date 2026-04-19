@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KarateKid Brawler</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; display: flex; justify-content: center; align-items: center; touch-action: none; -webkit-tap-highlight-color: transparent; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+#touch-controls button:active { transform: scale(0.92); opacity: 0.8; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script>
+// ============================================
+// CONSTANTS
+// ============================================
+var W = 800, H = 500, FLOOR_Y = 380, GRAVITY = 0.6, JUMP_FORCE = -13, MOVE_SPEED = 4;
+var WAVE_ENEMIES = [3, 3, 1];
+var ENEMY_TYPES = {
+  bob:    { name: 'White Belt Bob',    color: '#DDDDDD', skin: '#FFCC99', gi: '#FFFFFF', belt: '#DDDDDD', hp: 2, speed: 1.2, atkDmg: 1, atkCd: 90,  scale: 0.9 },
+  yuki:   { name: 'Yellow Belt Yuki',  color: '#FFD700', skin: '#F5D0A9', gi: '#F0F0F0', belt: '#FFD700', hp: 3, speed: 1.6, atkDmg: 1, atkCd: 70,  scale: 1.0 },
+  sensei: { name: 'Black Belt Sensei', color: '#1a1a1a', skin: '#E8C39E', gi: '#202020', belt: '#000000', hp: 8, speed: 1.0, atkDmg: 2, atkCd: 110, scale: 1.25 }
+};
+var P_ST = { IDLE: 'idle', PUNCH: 'punch', KICK: 'kick', JUMP: 'jump', BLOCK: 'block', HIT: 'hit', KATA: 'kata' };
+var E_ST = { IDLE: 'idle', APPROACH: 'approach', ATTACK: 'attack', HIT: 'hit', DEFEATED: 'defeated' };
+var G_ST = { MENU: 'menu', PLAYING: 'playing', WAVE_CLEAR: 'wave_clear', VICTORY: 'victory', GAMEOVER: 'gameover' };
+
+// ============================================
+// AUDIO ENGINE
+// ============================================
+var audioCtx = null, masterGain = null;
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.4;
+  masterGain.connect(audioCtx.destination);
+}
+function playTone(freq, duration, type, gainVal, attack, decay) {
+  if (!audioCtx) return;
+  type = type || 'square'; gainVal = gainVal || 0.3; attack = attack || 0.01;
+  var osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(gainVal, audioCtx.currentTime + attack);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain); gain.connect(masterGain);
+  osc.start(); osc.stop(audioCtx.currentTime + duration);
+}
+function playNoise(duration, gainVal) {
+  if (!audioCtx) return;
+  gainVal = gainVal || 0.15;
+  var bufSize = audioCtx.sampleRate * duration;
+  var buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  var data = buf.getChannelData(0);
+  for (var i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+  var src = audioCtx.createBufferSource(), gain = audioCtx.createGain(), filter = audioCtx.createBiquadFilter();
+  src.buffer = buf; filter.type = 'highpass'; filter.frequency.value = 1000;
+  gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  src.connect(filter); filter.connect(gain); gain.connect(masterGain);
+  src.start();
+}
+var SFX = {
+  punch: function() { playTone(150, 0.08, 'square', 0.4); playNoise(0.06, 0.3); },
+  kick: function() { playTone(100, 0.12, 'sawtooth', 0.35); playNoise(0.08, 0.25); },
+  hit: function() { playTone(200, 0.15, 'square', 0.5); playTone(80, 0.2, 'sawtooth', 0.3); },
+  enemyHit: function() { playTone(300, 0.1, 'square', 0.4); playTone(150, 0.15, 'sawtooth', 0.3); },
+  kata: function() { var notes = [523, 659, 784, 1047, 784, 1047]; notes.forEach(function(f, i) { setTimeout(function() { playTone(f, 0.2, 'sine', 0.3); }, i * 80); }); },
+  jump: function() { playTone(300, 0.08, 'sine', 0.2); playTone(400, 0.08, 'sine', 0.15); },
+  coin: function() { playTone(988, 0.1, 'square', 0.3); setTimeout(function() { playTone(1319, 0.2, 'square', 0.3); }, 100); },
+  gameOver: function() { [400, 350, 300, 200].forEach(function(f, i) { setTimeout(function() { playTone(f, 0.3, 'sawtooth', 0.4); }, i * 200); }); },
+  victory: function() { [523, 659, 784, 1047, 1319, 1047].forEach(function(f, i) { setTimeout(function() { playTone(f, 0.25, 'sine', 0.35); }, i * 120); }); },
+  waveComplete: function() { [440, 554, 659, 880].forEach(function(f, i) { setTimeout(function() { playTone(f, 0.15, 'square', 0.3); }, i * 80); }); },
+  bossAppear: function() { [200, 150, 100, 80].forEach(function(f, i) { setTimeout(function() { playTone(f, 0.3, 'sawtooth', 0.5); }, i * 150); }); },
+  select: function() { playTone(660, 0.08, 'square', 0.25); },
+  block: function() { playTone(250, 0.06, 'triangle', 0.3); },
+  levelUp: function() { [523, 784, 1047, 1568].forEach(function(f, i) { setTimeout(function() { playTone(f, 0.2, 'sine', 0.3); }, i * 100); }); }
+};
+var bgMusicInterval = null, bgNoteIdx = 0;
+var BG_NOTES = [196, 220, 247, 262, 294, 262, 247, 220];
+function startBGMusic() {
+  if (!audioCtx || bgMusicInterval) return;
+  bgMusicInterval = setInterval(function() {
+    if (!audioCtx) return;
+    playTone(BG_NOTES[bgNoteIdx % BG_NOTES.length], 0.18, 'triangle', 0.08);
+    bgNoteIdx++;
+  }, 280);
+}
+function stopBGMusic() { if (bgMusicInterval) { clearInterval(bgMusicInterval); bgMusicInterval = null; } }
+
+// ============================================
+// PARTICLES
+// ============================================
+var particles = [];
+function createParticle(x, y, color, vx, vy, size, life) { particles.push({x:x, y:y, color:color, vx:vx, vy:vy, size:size||4, life:life||60, maxLife:life||60}); }
+function updateParticles() {
+  for (var i = particles.length - 1; i >= 0; i--) {
+    var p = particles[i];
+    p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+function drawParticles(ctx) {
+  particles.forEach(function(p) {
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+function spawnHit(x, y, color, count) {
+  count = count || 8;
+  for (var i = 0; i < count; i++) {
+    var angle = Math.PI * 2 / count * i + Math.random() * 0.5;
+    var speed = 3 + Math.random() * 4;
+    createParticle(x, y, color, Math.cos(angle) * speed, Math.sin(angle) * speed - 2, 3 + Math.random() * 3, 25 + Math.random() * 15);
+  }
+}
+function spawnKata(x, y, count) {
+  count = count || 20;
+  var colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FFFFFF'];
+  for (var i = 0; i < count; i++) {
+    var angle = Math.random() * Math.PI * 2;
+    var speed = 2 + Math.random() * 6;
+    createParticle(x, y, colors[Math.floor(Math.random() * colors.length)], Math.cos(angle) * speed, Math.sin(angle) * speed - 3, 4 + Math.random() * 4, 40 + Math.random() * 30);
+  }
+}
+var shake = { intensity: 0, duration: 0 };
+function triggerShake(intensity, duration) { intensity = intensity || 10; duration = duration || 10; shake.intensity = intensity; shake.duration = duration; }
+function applyShake(ctx) {
+  if (shake.duration > 0) {
+    ctx.translate((Math.random() - 0.5) * shake.intensity, (Math.random() - 0.5) * shake.duration);
+    shake.duration--;
+    shake.intensity *= 0.9;
+  }
+}
+
+// ============================================
+// INPUT
+// ============================================
+var keys = {};
+var touch = { left: false, right: false, punch: false, kick: false, jump: false, block: false, kata: false };
+var isMobile = false;
+document.addEventListener('keydown', function(e) { keys[e.code] = true; if (e.code === 'Space' || e.code === 'Enter') e.preventDefault(); });
+document.addEventListener('keyup', function(e) { keys[e.code] = false; });
+function setupTouchControls() {
+  var c = document.createElement('div');
+  c.id = 'touch-controls';
+  c.style.cssText = 'position:fixed;bottom:5px;left:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 16px;pointer-events:none;z-index:100;';
+  var dpad = document.createElement('div');
+  dpad.style.cssText = 'display:flex;gap:6px;pointer-events:auto;';
+  var acts = document.createElement('div');
+  acts.style.cssText = 'display:flex;gap:6px;pointer-events:auto;';
+  function mkBtn(id, label, color) {
+    var b = document.createElement('button');
+    b.id = id; b.textContent = label;
+    b.style.cssText = 'width:48px;height:48px;border-radius:10px;background:' + color + ';border:3px solid #fff;font:bold 14px "Courier New",monospace;color:#fff;cursor:pointer;touch-action:manipulation;';
+    b.addEventListener('touchstart', function(e) { e.preventDefault(); touch[id] = true; SFX.select(); });
+    b.addEventListener('touchend', function(e) { e.preventDefault(); touch[id] = false; });
+    b.addEventListener('mousedown', function(e) { touch[id] = true; SFX.select(); });
+    b.addEventListener('mouseup', function(e) { touch[id] = false; });
+    return b;
+  }
+  dpad.appendChild(mkBtn('left', '\u2190', '#3366CC'));
+  dpad.appendChild(mkBtn('right', '\u2192', '#3366CC'));
+  dpad.appendChild(mkBtn('jump', '\u2191', '#3366CC'));
+  acts.appendChild(mkBtn('punch', 'A', '#CC3300'));
+  acts.appendChild(mkBtn('kick', 'S', '#CC6600'));
+  acts.appendChild(mkBtn('block', 'D', '#3366CC'));
+  acts.appendChild(mkBtn('kata', '\u2605', '#9933CC'));
+  c.appendChild(dpad); c.appendChild(acts);
+  document.body.appendChild(c);
+}
+function isLeft()   { return keys['ArrowLeft']  || keys['KeyA'] || touch.left; }
+function isRight()  { return keys['ArrowRight'] || keys['KeyD'] || touch.right; }
+function isJump()   { return keys['ArrowUp']    || keys['KeyW'] || touch.jump; }
+function isPunch()  { return keys['KeyJ'] || touch.punch; }
+function isKick()   { return keys['KeyK'] || touch.kick; }
+function isBlock()  { return keys['KeyS'] || touch.block; }
+function isKata()   { return keys['Space'] || touch.kata; }
+
+// ============================================
+// BACKGROUND
+// ============================================
+function drawBackground(ctx, wave) {
+  wave = wave || 1;
+  var grad = ctx.createLinearGradient(0, 0, 0, H);
+  if (wave === 3) { grad.addColorStop(0, '#0a0010'); grad.addColorStop(1, '#1a0030'); }
+  else if (wave === 2) { grad.addColorStop(0, '#001a3a'); grad.addColorStop(1, '#003060'); }
+  else { grad.addColorStop(0, '#87CEEB'); grad.addColorStop(1, '#c8e6f5'); }
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  // Mountains
+  ctx.fillStyle = wave >= 2 ? '#2a2040' : '#6b8f71';
+  ctx.beginPath();
+  ctx.moveTo(0, H); ctx.lineTo(100, 200); ctx.lineTo(200, 280); ctx.lineTo(320, 180);
+  ctx.lineTo(450, 260); ctx.lineTo(580, 160); ctx.lineTo(700, 240); ctx.lineTo(800, 190); ctx.lineTo(800, H);
+  ctx.fill();
+  // Floor
+  ctx.fillStyle = wave >= 2 ? '#2a1a0a' : '#c8a86a';
+  ctx.fillRect(0, FLOOR_Y + 35, W, H - FLOOR_Y - 35);
+  ctx.strokeStyle = wave >= 2 ? '#3a2a1a' : '#b09050';
+  for (var fi = 0; fi < W; fi += 80) { ctx.beginPath(); ctx.moveTo(fi, FLOOR_Y + 35); ctx.lineTo(fi, H); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0, FLOOR_Y + 35, W, 4);
+  // Pillars
+  var pCol = wave >= 2 ? '#3a2a1a' : '#8B7355';
+  ctx.fillStyle = pCol;
+  ctx.fillRect(30, 60, 30, FLOOR_Y + 35);
+  ctx.fillRect(W - 60, 60, 30, FLOOR_Y + 35);
+  ctx.fillStyle = wave >= 2 ? '#5a4a3a' : '#a08060';
+  ctx.fillRect(25, 55, 40, 15); ctx.fillRect(W - 65, 55, 40, 15);
+  // Banner
+  ctx.fillStyle = wave >= 3 ? '#8B0000' : wave >= 2 ? '#CC0000' : '#FF4136';
+  ctx.fillRect(200, 30, 400, 50);
+  ctx.fillStyle = '#FFD700'; ctx.font = 'bold 22px "Courier New",monospace';
+  ctx.textAlign = 'center';
+  var btxt = wave === 3 ? 'SENSEI CHALLENGE!' : wave === 2 ? 'YUKI STAGE' : 'DOJO TRAINING';
+  ctx.fillText(btxt, 400, 62); ctx.textAlign = 'left';
+  // Lanterns
+  if (wave >= 2) {
+    for (var li = 0; li < 5; li++) {
+      var lx = 160 + li * 120;
+      ctx.fillStyle = wave >= 3 ? '#8B0000' : '#CC3300';
+      ctx.beginPath(); ctx.ellipse(lx, 100, 15, 22, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFD700'; ctx.globalAlpha = 0.6 + Math.sin(Date.now() * 0.003 + li) * 0.4;
+      ctx.beginPath(); ctx.ellipse(lx, 100, 8, 12, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+
+// ============================================
+// SPRITE: PLAYER
+// ============================================
+function drawPlayer(ctx, x, y, state, frame, facingRight, flash) {
+  ctx.save();
+  if (!facingRight) { ctx.translate(x + 40, y); ctx.scale(-1, 1); ctx.translate(-x, -y); }
+  var skin = '#FFCC99', gi = '#FFFFFF', giSh = '#E0E0E0', beltR = '#CC0000', beltD = '#990000', hair = '#1a1a1a';
+  var af = Math.floor(frame) % 4;
+  var anim = state !== P_ST.IDLE;
+  var hs = 20, bw = 24, bh = 28, aw = 8, lw = 10, lh = 24;
+  var flashAlpha = flash ? 0.5 + Math.sin(Date.now() * 0.02) * 0.5 : 1;
+
+  function body() {
+    ctx.fillStyle = gi; ctx.fillRect(x + 8, y - 24, bw + 8, 16);
+    ctx.fillStyle = giSh; ctx.fillRect(x + 8, y - 24, bw + 8, 2);
+    ctx.fillStyle = beltR; ctx.fillRect(x + 10, y - 26, bw + 4, 4);
+    ctx.fillStyle = beltD; ctx.fillRect(x + 18, y - 28, 6, 6);
+    ctx.fillStyle = gi; ctx.fillRect(x + 8, y - 50, bw, bh);
+    ctx.fillStyle = giSh; ctx.fillRect(x + 8, y - 50, bw, 3);
+    ctx.fillStyle = giSh; ctx.beginPath(); ctx.moveTo(x + 14, y - 50); ctx.lineTo(x + 20, y - 42); ctx.lineTo(x + 26, y - 50); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = gi; ctx.fillRect(x, y - 46, aw + 2, 14); ctx.fillRect(x + 34, y - 46, aw + 2, 14);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + 20, y - 58, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hair; ctx.fillRect(x + 14, y - 68, 12, 8); ctx.fillRect(x + 16, y - 72, 8, 6);
+    ctx.fillStyle = '#000'; ctx.fillRect(x + 15, y - 58, 3, 3); ctx.fillRect(x + 22, y - 58, 3, 3);
+    ctx.fillStyle = '#000'; ctx.fillRect(x + 14, y - 54, 12, 2);
+  }
+  function legs() {
+    ctx.fillStyle = skin;
+    ctx.fillRect(x + 10, y - lh - 10, lw, lh); ctx.fillRect(x + 22, y - lh - 10, lw, lh);
+  }
+
+  if (state === P_ST.IDLE) {
+    var b = Math.sin(frame * 0.1) * 1;
+    legs(); ctx.save(); ctx.translate(0, b); body(); ctx.restore();
+    ctx.fillStyle = skin; ctx.fillRect(x + 2, y - 48 + (-b), aw, 18); ctx.fillRect(x + 32, y - 48 + (-b), aw, 18);
+  } else if (state === P_ST.PUNCH) {
+    var pe = anim ? Math.sin(frame * 0.3) * 20 : 0;
+    ctx.fillStyle = skin; ctx.fillRect(x + 6, y - lh - 10, lw, lh); ctx.fillRect(x + 24, y - lh - 10, lw, lh);
+    ctx.fillStyle = gi; ctx.fillRect(x + 4, y - 24, bw + 8, 16);
+    ctx.fillStyle = beltR; ctx.fillRect(x + 8, y - 26, bw + 4, 4);
+    ctx.fillStyle = gi; ctx.fillRect(x + 6, y - 50, bw + 4, bh);
+    ctx.fillStyle = skin; ctx.fillRect(x - 2, y - 46, aw, 16);
+    ctx.fillStyle = skin; ctx.fillRect(x + 32 + pe, y - 46, aw + pe, 12);
+    ctx.beginPath(); ctx.arc(x + 48 + pe * 2, y - 40, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + 20, y - 58, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hair; ctx.fillRect(x + 14, y - 68, 12, 8); ctx.fillRect(x + 16, y - 72, 8, 6);
+    ctx.fillStyle = '#000'; ctx.fillRect(x + 23, y - 58, 4, 3);
+  } else if (state === P_ST.KICK) {
+    var ke = anim ? Math.abs(Math.sin(frame * 0.25)) * 30 : 20;
+    ctx.fillStyle = skin; ctx.fillRect(x + 12, y - lh - 10, lw, lh);
+    ctx.save(); ctx.translate(x + 22, y - 30); ctx.rotate(-Math.PI / 4);
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, lw, lh + ke); ctx.fillRect(-2, lh + ke - 4, lw + 4, 8); ctx.restore();
+    ctx.fillStyle = gi; ctx.fillRect(x + 8, y - 24, bw + 4, 16);
+    ctx.fillStyle = beltR; ctx.fillRect(x + 10, y - 26, bw + 4, 4);
+    ctx.fillStyle = gi; ctx.fillRect(x + 4, y - 50, bw + 4, bh);
+    ctx.fillStyle = skin; ctx.fillRect(x - 4, y - 44, aw, 14); ctx.fillRect(x + 34, y - 48, aw, 18);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + 18, y - 58, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hair; ctx.fillRect(x + 12, y - 68, 12, 8); ctx.fillRect(x + 14, y - 72, 8, 6);
+    ctx.fillStyle = '#000'; ctx.fillRect(x + 20, y - 58, 4, 3);
+  } else if (state === P_ST.JUMP) {
+    var jo = anim ? Math.abs(Math.sin(frame * 0.2)) * 20 : 0;
+    ctx.fillStyle = skin; ctx.fillRect(x + 8, y - 20 - jo, lw, 16); ctx.fillRect(x + 24, y - 20 - jo, lw, 16);
+    ctx.fillStyle = gi; ctx.fillRect(x + 6, y - 28 - jo, bw + 6, 14);
+    ctx.fillStyle = beltR; ctx.fillRect(x + 8, y - 30 - jo, bw + 4, 4);
+    ctx.fillStyle = gi; ctx.fillRect(x + 6, y - 52 - jo, bw + 4, bh);
+    ctx.fillStyle = skin; ctx.fillRect(x - 2, y - 58 - jo, aw, 14); ctx.fillRect(x + 34, y - 58 - jo, aw, 14);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + 20, y - 62 - jo, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hair; ctx.fillRect(x + 14, y - 72 - jo, 12, 8); ctx.fillRect(x + 16, y - 76 - jo, 8, 6);
+    ctx.fillStyle = '#000'; ctx.fillRect(x + 15, y - 62 - jo, 3, 4); ctx.fillRect(x + 22, y - 62 - jo, 3, 4);
+  } else if (state === P_ST.BLOCK) {
+    ctx.fillStyle = skin; ctx.fillRect(x + 4, y - lh - 10, lw, lh); ctx.fillRect(x + 28, y - lh - 10, lw, lh);
+    ctx.fillStyle = gi; ctx.fillRect(x + 2, y - 24, bw + 10, 16);
+    ctx.fillStyle = beltR; ctx.fillRect(x + 4, y - 26, bw + 8, 4);
+    ctx.fillStyle = gi; ctx.fillRect(x + 4, y - 50, bw + 8, bh);
+    ctx.fillStyle = gi; ctx.fillRect(x + 4, y - 58, aw + 6, 20); ctx.fillRect(x + 30, y - 58, aw + 6, 20);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + 20, y - 52, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + 20, y - 68, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hair; ctx.fillRect(x + 14, y - 78, 12, 8); ctx.fillRect(x + 16, y - 82, 8, 6);
+    ctx.fillStyle = '#000'; ctx.fillRect(x + 14, y - 66, 5, 2); ctx.fillRect(x + 21, y - 66, 5, 2);
+  } else if (state === P_ST.HIT) {
+    var ro = anim ? Math.sin(frame * 0.4) * 8 : 0;
+    ctx.fillStyle = skin; ctx.fillRect(x + 10 - ro, y - lh - 10, lw, lh); ctx.fillRect(x + 22 - ro, y - lh - 10, lw, lh);
+    ctx.fillStyle = gi; ctx.fillRect(x + 8 - ro, y - 24, bw + 8, 16);
+    ctx.fillStyle = beltR; ctx.fillRect(x + 10 - ro, y - 26, bw + 4, 4);
+    ctx.fillStyle = gi; ctx.fillRect(x + 6 - ro, y - 50, bw + 6, bh);
+    ctx.fillStyle = skin; ctx.fillRect(x - 6 - ro, y - 44, aw, 14); ctx.fillRect(x + 38 - ro, y - 44, aw, 14);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + 16 - ro, y - 58, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hair; ctx.fillRect(x + 10 - ro, y - 68, 12, 8); ctx.fillRect(x + 12 - ro, y - 72, 8, 6);
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x + 13 - ro, y - 60); ctx.lineTo(x + 18 - ro, y - 55); ctx.moveTo(x + 18 - ro, y - 60); ctx.lineTo(x + 13 - ro, y - 55); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 20 - ro, y - 60); ctx.lineTo(x + 25 - ro, y - 55); ctx.moveTo(x + 25 - ro, y - 60); ctx.lineTo(x + 20 - ro, y - 55); ctx.stroke();
+  } else if (state === P_ST.KATA) {
+    var kg = Math.sin(frame * 0.2) * 0.3 + 0.7;
+    ctx.fillStyle = 'rgba(255,215,0,' + (kg * 0.3) + ')'; ctx.beginPath(); ctx.arc(x + 20, y - 35, 45, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = skin; ctx.fillRect(x + 2, y - lh - 10, lw, lh); ctx.fillRect(x + 30, y - lh - 10, lw, lh);
+    ctx.fillStyle = gi; ctx.fillRect(x, y - 24, bw + 12, 16);
+    ctx.fillStyle = beltR; ctx.fillRect(x + 2, y - 26, bw + 8, 4);
+    ctx.fillRect(x - 4 + Math.sin(frame * 0.3) * 3, y - 26, 8, 14); ctx.fillRect(x + 38 + Math.sin(frame * 0.3 + 1) * 3, y - 26, 8, 14);
+    ctx.fillStyle = gi; ctx.fillRect(x + 2, y - 50, bw + 8, bh);
+    ctx.fillStyle = skin; ctx.fillRect(x - 8, y - 48, aw, 16); ctx.fillRect(x + 38, y - 48, aw, 16);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(x + 20, y - 60, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = hair; ctx.fillRect(x + 14, y - 70, 12, 8); ctx.fillRect(x + 16, y - 74, 8, 6);
+    ctx.fillStyle = '#000'; ctx.fillRect(x + 14, y - 56, 12, 2); ctx.fillRect(x + 14, y - 54, 2, 3); ctx.fillRect(x + 24, y - 54, 2, 3);
+  } else {
+    legs(); body();
+    ctx.fillStyle = skin; ctx.fillRect(x + 2, y - 48, aw, 18); ctx.fillRect(x + 32, y - 48, aw, 18);
+  }
+
+  if (flash) {
+    ctx.fillStyle = 'rgba(255,255,255,' + (flashAlpha * 0.6) + ')';
+    ctx.fillRect(x - 5, y - 90, 50, 95);
+  }
+  ctx.restore();
+}
+
+// ============================================
+// SPRITE: ENEMY
+// ============================================
+function drawEnemy(ctx, x, y, state, frame, type, facingRight) {
+  var et = ENEMY_TYPES[type];
+  if (!et) return;
+  ctx.save();
+  if (!facingRight) { ctx.translate(x + 40, y); ctx.scale(-1, 1); ctx.translate(-x, -y); }
+  var skin = et.skin, gi = et.gi, belt = et.belt, sc = et.scale || 1;
+  ctx.scale(sc, sc);
+  var sx = x / sc, sy = y / sc;
+  var hs = 20, bw = 24, bh = 28, aw = 8, lw = 10, lh = 24;
+
+  if (state === E_ST.DEFEATED) {
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = skin; ctx.fillRect(sx + 10, sy - lh - 10 + 20, lw, lh - 10);
+    ctx.fillStyle = gi; ctx.fillRect(sx + 8, sy - 24 + 20, bw + 8, 16);
+    ctx.fillStyle = belt; ctx.fillRect(sx + 10, sy - 26 + 20, bw + 4, 4);
+    ctx.fillStyle = gi; ctx.fillRect(sx + 8, sy - 50 + 20, bw, bh);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(sx + 20, sy - 58 + 25, hs / 2, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  } else if (state === E_ST.HIT) {
+    var ro2 = Math.sin(frame * 0.5) * 10;
+    ctx.fillStyle = skin; ctx.fillRect(sx + 10 - ro2, sy - lh - 10, lw, lh); ctx.fillRect(sx + 22 - ro2, sy - lh - 10, lw, lh);
+    ctx.fillStyle = gi; ctx.fillRect(sx + 8 - ro2, sy - 24, bw + 8, 16);
+    ctx.fillStyle = belt; ctx.fillRect(sx + 10 - ro2, sy - 26, bw + 4, 4);
+    ctx.fillStyle = gi; ctx.fillRect(sx + 6 - ro2, sy - 50, bw + 6, bh);
+    ctx.fillStyle = skin; ctx.fillRect(sx - 6 - ro2, sy - 44, aw, 14); ctx.fillRect(sx + 38 - ro2, sy - 44, aw, 14);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(sx + 16 - ro2, sy - 58, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 2;
+    for (var si = 0; si < 3; si++) { var a2 = (Date.now() * 0.01 + si) * Math.PI; ctx.beginPath(); ctx.arc(sx + 20 + Math.cos(a2) * 12, sy - 58 + Math.sin(a2) * 5, 3, 0, Math.PI * 2); ctx.stroke(); }
+  } else if (state === E_ST.ATTACK) {
+    var pe2 = Math.sin(frame * 0.3) * 18;
+    ctx.fillStyle = skin; ctx.fillRect(sx + 6, sy - lh - 10, lw, lh); ctx.fillRect(sx + 24, sy - lh - 10, lw, lh);
+    ctx.fillStyle = gi; ctx.fillRect(sx + 4, sy - 24, bw + 8, 16);
+    ctx.fillStyle = belt; ctx.fillRect(sx + 8, sy - 26, bw + 4, 4);
+    ctx.fillStyle = gi; ctx.fillRect(sx + 6, sy - 50, bw + 4, bh);
+    ctx.fillStyle = skin; ctx.fillRect(sx + 32 + pe2, sy - 46, aw + pe2, 12);
+    ctx.beginPath(); ctx.arc(sx + 48 + pe2 * 2, sy - 40, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(sx + 20, sy - 58, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+  } else {
+    var b2 = Math.sin(frame * 0.1) * 1;
+    ctx.fillStyle = skin; ctx.fillRect(sx + 10, sy - lh - 10 + b2, lw, lh); ctx.fillRect(sx + 22, sy - lh - 10 + b2, lw, lh);
+    ctx.fillStyle = gi; ctx.fillRect(sx + 8, sy - 24, bw + 8, 16);
+    ctx.fillStyle = belt; ctx.fillRect(sx + 10, sy - 26, bw + 4, 4);
+    ctx.fillStyle = gi; ctx.fillRect(sx + 8, sy - 50, bw, bh);
+    ctx.fillStyle = gi; ctx.fillRect(sx, sy - 46, aw + 2, 14); ctx.fillRect(sx + 34, sy - 46, aw + 2, 14);
+    ctx.fillStyle = skin; ctx.fillRect(sx + 2, sy - 48 + b2, aw, 18); ctx.fillRect(sx + 32, sy - 48 + b2, aw, 18);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(sx + 20, sy - 58, hs / 2 + 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#000'; ctx.fillRect(sx + 15, sy - 58, 4, 3); ctx.fillRect(sx + 22, sy - 58, 4, 3);
+    ctx.fillStyle = '#000'; ctx.fillRect(sx + 14, sy - 61, 12, 2);
+  }
+  ctx.restore();
+}
+
+// ============================================
+// HUD & SCREENS
+// ============================================
+function drawHUD(ctx, ph, maxHp, score, wave, combo) {
+  ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, W, 50);
+  ctx.fillStyle = '#333'; ctx.fillRect(10, 10, 200, 24);
+  var hpPct = ph / maxHp;
+  ctx.fillStyle = hpPct > 0.5 ? '#00CC44' : hpPct > 0.25 ? '#FFCC00' : '#FF2222';
+  ctx.fillRect(12, 12, 196 * hpPct, 20);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 14px "Courier New",monospace';
+  ctx.fillText('HP: ' + ph + '/' + maxHp, 16, 27);
+  ctx.fillStyle = '#FFD700'; ctx.font = 'bold 18px "Courier New",monospace';
+  ctx.fillText('SCORE: ' + score, 230, 30);
+  ctx.fillStyle = '#FF6B6B'; ctx.fillText('WAVE ' + wave + '/3', 480, 30);
+  if (combo > 1) {
+    ctx.fillStyle = '#4ECDC4'; ctx.font = 'bold ' + Math.min(16 + combo * 2, 32) + 'px "Courier New",monospace';
+    ctx.fillText(combo + 'x COMBO!', 630, 30);
+  }
+  if (isMobile) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '10px "Courier New",monospace';
+    ctx.fillText('A=PUNCH S=KICK W=JUMP D=BLOCK SPACE=KATA', 180, H - 8);
+  }
+}
+
+function drawWaveAnnounce(ctx, wave) {
+  var types = ['BOB', 'YUKI', 'SENSEI'];
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#FFD700'; ctx.font = 'bold 48px "Courier New",monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('WAVE ' + wave, W / 2, H / 2 - 20);
+  ctx.fillStyle = '#FF6B6B'; ctx.font = 'bold 28px "Courier New",monospace';
+  ctx.fillText('vs ' + types[wave - 1] + '!', W / 2, H / 2 + 25);
+  ctx.fillStyle = '#fff'; ctx.font = '18px "Courier New",monospace';
+  ctx.fillText('PRESS ANY KEY OR TAP TO START', W / 2, H / 2 + 70);
+  ctx.textAlign = 'left';
+}
+
+function drawTitle(ctx, t) {
+  drawBackground(ctx, 1);
+  ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(100, 80, 600, 340);
+  ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 4;
+  ctx.strokeRect(100, 80, 600, 340);
+  ctx.fillStyle = '#FF4136'; ctx.font = 'bold 56px "Courier New",monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('KARATEKID', W / 2, 160);
+  ctx.fillStyle = '#FFD700'; ctx.font = 'bold 64px "Courier New",monospace';
+  ctx.fillText('BRAWLER', W / 2, 230);
+  drawPlayer(ctx, W / 2 - 20, 310, P_ST.IDLE, t * 0.05, true, false);
+  ctx.fillStyle = '#fff'; ctx.font = '16px "Courier New",monospace';
+  ctx.fillText('ARROW KEYS: Move | A: Punch | S: Kick', W / 2, 365);
+  ctx.fillText('W: Jump | D: Block | SPACE: Kata Special', W / 2, 390);
+  ctx.fillStyle = '#4ECDC4'; ctx.font = '14px "Courier New",monospace';
+  ctx.fillText('For Avicenna -- age 6', W / 2, 420);
+  if (Math.floor(t / 30) % 2 === 0) {
+    ctx.fillStyle = '#FFD700'; ctx.font = 'bold 22px "Courier New",monospace';
+    ctx.fillText('PRESS ENTER OR TAP TO START', W / 2, 455);
+  }
+  ctx.textAlign = 'left';
+}
+
+function drawGameOver(ctx, score) {
+  ctx.fillStyle = 'rgba(0,0,0,0.8)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#FF2222'; ctx.font = 'bold 64px "Courier New",monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('GAME OVER', W / 2, H / 2 - 40);
+  ctx.fillStyle = '#FFD700'; ctx.font = 'bold 28px "Courier New",monospace';
+  ctx.fillText('Final Score: ' + score, W / 2, H / 2 + 20);
+  ctx.fillStyle = '#fff'; ctx.font = '18px "Courier New",monospace';
+  ctx.fillText('Press ENTER or TAP to try again', W / 2, H / 2 + 70);
+  ctx.textAlign = 'left';
+}
+
+function drawVictory(ctx, score) {
+  ctx.fillStyle = 'rgba(0,0,20,0.85)'; ctx.fillRect(0, 0, W, H);
+  var cols = ['#FFD700', '#FF6B6B', '#4ECDC4', '#FF4136', '#FFFFFF'];
+  for (var ci = 0; ci < 40; ci++) {
+    var px = (Date.now() * 0.1 + ci * 73) % W, py = (Date.now() * 0.05 + ci * 47) % H;
+    ctx.fillStyle = cols[ci % 5]; ctx.globalAlpha = 0.7;
+    ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#FFD700'; ctx.font = 'bold 56px "Courier New",monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('VICTORY!', W / 2, H / 2 - 60);
+  ctx.fillStyle = '#4ECDC4'; ctx.font = 'bold 36px "Courier New",monospace';
+  ctx.fillText('YOU BEAT THE SENSEI!', W / 2, H / 2 - 10);
+  ctx.fillStyle = '#FFD700'; ctx.font = 'bold 28px "Courier New",monospace';
+  ctx.fillText('Score: ' + score, W / 2, H / 2 + 40);
+  ctx.fillStyle = '#fff'; ctx.font = '20px "Courier New",monospace';
+  ctx.fillText('True Karate Master!', W / 2, H / 2 + 80);
+  ctx.fillStyle = '#aaa'; ctx.font = '14px "Courier New",monospace';
+  ctx.fillText('Press ENTER to play again', W / 2, H / 2 + 120);
+  ctx.textAlign = 'left';
+}
+
+function drawWaveClear(ctx, wave) {
+  ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#4ECDC4'; ctx.font = 'bold 48px "Courier New",monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('WAVE ' + wave + ' CLEAR!', W / 2, H / 2 - 20);
+  ctx.fillStyle = '#FFD700'; ctx.font = '24px "Courier New",monospace';
+  ctx.fillText('Get ready for the next challenger...', W / 2, H / 2 + 30);
+  ctx.textAlign = 'left';
+}
+
+// ============================================
+// GAME STATE
+// ============================================
+var game = {};
+function initGame() {
+  game = { state: G_ST.MENU, wave: 1, score: 0, combo: 0, comboTimer: 0, waveTimer: 0, announceTimer: 0, frame: 0, player: null, enemies: [], particles: [] };
+}
+
+function spawnWave(wave) {
+  game.enemies = [];
+  var count = WAVE_ENEMIES[wave - 1];
+  var type = wave === 1 ? 'bob' : wave === 2 ? 'yuki' : 'sensei';
+  for (var i = 0; i < count; i++) {
+    game.enemies.push({
+      type: type, x: 480 + i * 130 + Math.random() * 40, y: FLOOR_Y,
+      vx: 0, vy: 0, hp: ENEMY_TYPES[type].hp, maxHp: ENEMY_TYPES[type].hp,
+      state: E_ST.IDLE, stateTimer: 0, atkCd: 0, hitTimer: 0, facingRight: false,
+      scale: ENEMY_TYPES[type].scale, frame: Math.random() * 100, active: true, deathTimer: 0
+    });
+  }
+  game.player = {
+    x: 120, y: FLOOR_Y, vx: 0, vy: 0, hp: 5, maxHp: 5,
+    state: P_ST.IDLE, stateTimer: 0, facingRight: true, frame: 0,
+    grounded: true, hitTimer: 0, kataCooldown: 0, attackHit: false
+  };
+}
+
+function playerAttack(type) {
+  var p = game.player;
+  if (p.hitTimer > 0) return;
+  if (p.state === P_ST.PUNCH || p.state === P_ST.KICK || p.state === P_ST.KATA) return;
+  p.state = type;
+  p.stateTimer = 20;
+  p.attackHit = false;
+  if (type === P_ST.PUNCH) SFX.punch();
+  else if (type === P_ST.KICK) SFX.kick();
+  else if (type === P_ST.KATA) { SFX.kata(); spawnKata(p.x, p.y - 40, 30); }
+}
+
+function doPlayerAttackHit() {
+  var p = game.player;
+  var reach = p.state === P_ST.KICK ? 70 : p.state === P_ST.PUNCH ? 55 : 80;
+  var dx = p.facingRight ? 1 : -1;
+  var ax = p.x + dx * reach;
+  game.enemies.forEach(function(e) {
+    if (!e.active || e.hitTimer > 0) return;
+    var ex = e.x + (e.scale || 1) * 20;
+    if (Math.abs(ax - ex) < 50 && Math.abs(p.y - e.y) < 60) {
+      e.hp--;
+      e.hitTimer = 20;
+      e.state = E_ST.HIT;
+      e.frame = 0;
+      spawnHit(e.x, e.y - 40, ENEMY_TYPES[e.type].color, 10);
+      triggerShake(6, 6);
+      if (p.state === P_ST.KATA) { e.hp -= 2; spawnKata(e.x, e.y - 40, 15); }
+      game.combo++;
+      game.comboTimer = 120;
+      var pts = (p.state === P_ST.KATA ? 200 : p.state === P_ST.KICK ? 100 : 60) * game.combo;
+      game.score += pts;
+      SFX.enemyHit();
+      if (e.hp <= 0) { e.state = E_ST.DEFEATED; e.active = false; e.deathTimer = 60; game.score += 500 * game.wave; SFX.coin(); }
+    }
+  });
+}
+
+function updatePlayer() {
+  var p = game.player;
+  p.frame++;
+  if (p.hitTimer > 0) p.hitTimer--;
+  if (p.stateTimer > 0) {
+    p.stateTimer--;
+    if (p.stateTimer === 14 && !p.attackHit && (p.state === P_ST.PUNCH || p.state === P_ST.KICK || p.state === P_ST.KATA)) { doPlayerAttackHit(); p.attackHit = true; }
+    if (p.stateTimer === 0) p.state = P_ST.IDLE;
+  }
+  if (p.kataCooldown > 0) p.kataCooldown--;
+  if (game.comboTimer > 0) { game.comboTimer--; if (game.comboTimer === 0) game.combo = 0; }
+  if (p.hitTimer === 0 && p.state !== P_ST.KATA) {
+    if (isPunch() && p.state === P_ST.IDLE) { playerAttack(P_ST.PUNCH); return; }
+    if (isKick() && p.state === P_ST.IDLE) { playerAttack(P_ST.KICK); return; }
+    if (isKata() && p.kataCooldown === 0 && p.state === P_ST.IDLE) { playerAttack(P_ST.KATA); p.kataCooldown = 120; return; }
+    if (isJump() && p.grounded) { p.vy = JUMP_FORCE; p.grounded = false; SFX.jump(); }
+    if (isBlock()) { p.state = P_ST.BLOCK; }
+    else if (p.state === P_ST.BLOCK) { p.state = P_ST.IDLE; }
+    if (p.state === P_ST.IDLE || p.state === P_ST.BLOCK) {
+      if (isLeft()) { p.vx = -MOVE_SPEED; p.facingRight = false; }
+      else if (isRight()) { p.vx = MOVE_SPEED; p.facingRight = true; }
+      else { p.vx *= 0.8; }
+    }
+  }
+  p.vy += GRAVITY;
+  p.x += p.vx;
+  p.y += p.vy;
+  if (p.y >= FLOOR_Y) { p.y = FLOOR_Y; p.vy = 0; p.grounded = true; }
+  p.x = Math.max(20, Math.min(W - 60, p.x));
+}
+
+function updateEnemies() {
+  var p = game.player;
+  game.enemies.forEach(function(e) {
+    if (!e.active && e.deathTimer > 0) { e.deathTimer--; return; }
+    if (!e.active) return;
+    e.frame++;
+    if (e.hitTimer > 0) { e.hitTimer--; if (e.hitTimer === 0) e.state = E_ST.IDLE; return; }
+    if (e.atkCd > 0) e.atkCd--;
+    var et = ENEMY_TYPES[e.type];
+    var sc = e.scale || 1;
+    var ex = e.x + sc * 20;
+    var dist = ex - p.x;
+    var dir = dist > 0 ? 1 : -1;
+    e.facingRight = dist > 0;
+    if (e.state === E_ST.HIT) return;
+    if (Math.abs(dist) < 50 && e.atkCd === 0) {
+      if (p.state === P_ST.BLOCK) { SFX.block(); }
+      else {
+        p.hp--;
+        p.hitTimer = 30;
+        p.state = P_ST.HIT;
+        spawnHit(p.x, p.y - 40, '#FF6B6B', 6);
+        triggerShake(8, 8);
+        SFX.hit();
+        if (p.hp <= 0) { game.state = G_ST.GAMEOVER; SFX.gameOver(); }
+      }
+      e.state = E_ST.ATTACK;
+      e.stateTimer = 30;
+      e.atkCd = et.atkCd;
+    } else if (Math.abs(dist) > 50) {
+      e.state = E_ST.APPROACH;
+      e.x += dir * et.speed;
+    } else {
+      e.state = E_ST.IDLE;
+    }
+    if (e.stateTimer > 0) { e.stateTimer--; if (e.stateTimer === 0 && e.state === E_ST.ATTACK) e.state = E_ST.IDLE; }
+    e.x = Math.max(30, Math.min(W - 50, e.x));
+  });
+}
+
+function checkWaveComplete() {
+  var alive = game.enemies.filter(function(e) { return e.active; });
+  if (alive.length === 0 && game.state === G_ST.PLAYING) {
+    if (game.wave < 3) { game.state = G_ST.WAVE_CLEAR; game.waveTimer = 150; SFX.waveComplete(); }
+    else { game.state = G_ST.VICTORY; SFX.victory(); }
+  }
+}
+
+// ============================================
+// MAIN LOOP
+// ============================================
+var canvas, ctx, lastTime = 0, menuTime = 0;
+function resize() {
+  var scale = Math.min(window.innerWidth / W, window.innerHeight / H);
+  canvas.width = W; canvas.height = H;
+  canvas.style.width = Math.floor(W * scale) + 'px';
+  canvas.style.height = Math.floor(H * scale) + 'px';
+  canvas.style.margin = 'auto';
+  canvas.style.position = 'absolute';
+  canvas.style.top = '0'; canvas.style.left = '0'; canvas.style.bottom = '0'; canvas.style.right = '0';
+}
+function startGame() {
+  initAudio();
+  startBGMusic();
+  game.wave = 1; game.score = 0; game.combo = 0;
+  game.state = G_ST.PLAYING;
+  game.announceTimer = 90;
+  spawnWave(1);
+}
+function advanceWave() {
+  game.wave++;
+  game.announceTimer = 90;
+  game.state = G_ST.PLAYING;
+  spawnWave(game.wave);
+  if (game.wave === 3) SFX.bossAppear();
+  else SFX.levelUp();
+}
+function advanceWaveByInput() {
+  game.wave++;
+  game.announceTimer = 90;
+  game.state = G_ST.PLAYING;
+  spawnWave(game.wave);
+  if (game.wave === 3) SFX.bossAppear();
+  else SFX.levelUp();
+}
+
+function loop(ts) {
+  var dt = Math.min((ts - lastTime) / 16.67, 2);
+  lastTime = ts;
+  game.frame++;
+  ctx.save();
+  applyShake(ctx);
+
+  if (game.state === G_ST.MENU) {
+    menuTime++;
+    drawTitle(ctx, menuTime);
+  } else if (game.state === G_ST.PLAYING) {
+    if (game.announceTimer > 0) {
+      game.announceTimer--;
+      drawBackground(ctx, game.wave);
+      if (game.player) drawPlayer(ctx, game.player.x, game.player.y, game.player.state, game.player.frame, game.player.facingRight, false);
+      game.enemies.forEach(function(e) { if (e.active || e.deathTimer > 0) drawEnemy(ctx, e.x, e.y, e.state, e.frame, e.type, e.facingRight); });
+      drawParticles(ctx);
+      drawHUD(ctx, game.player ? game.player.hp : 0, game.player ? game.player.maxHp : 5, game.score, game.wave, game.combo);
+      drawWaveAnnounce(ctx, game.wave);
+    } else {
+      updatePlayer();
+      updateEnemies();
+      updateParticles();
+      checkWaveComplete();
+      drawBackground(ctx, game.wave);
+      game.enemies.forEach(function(e) { if (e.active || e.deathTimer > 0) drawEnemy(ctx, e.x, e.y, e.state, e.frame, e.type, e.facingRight); });
+      if (game.player) drawPlayer(ctx, game.player.x, game.player.y, game.player.state, game.player.frame, game.player.facingRight, game.player.hitTimer > 0);
+      drawParticles(ctx);
+      drawHUD(ctx, game.player.hp, game.player.maxHp, game.score, game.wave, game.combo);
+      if (game.combo > 2 && game.player) {
+        ctx.fillStyle = '#FFD700'; ctx.font = 'bold ' + (16 + game.combo) + 'px "Courier New",monospace';
+        ctx.fillText(game.combo + 'x', game.player.x - 10, game.player.y - 80);
+      }
+    }
+  } else if (game.state === G_ST.WAVE_CLEAR) {
+    drawBackground(ctx, game.wave);
+    drawWaveClear(ctx, game.wave);
+    if (game.waveTimer > 0) game.waveTimer--;
+    else {
+      // auto-advance after countdown
+      ctx.fillStyle = '#fff'; ctx.font = '16px "Courier New",monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Next wave starting...', W / 2, H / 2 + 70);
+      ctx.textAlign = 'left';
+      if (game.waveTimer < -60) advanceWaveByInput();
+    }
+  } else if (game.state === G_ST.GAMEOVER) {
+    drawBackground(ctx, game.wave);
+    stopBGMusic();
+    drawGameOver(ctx, game.score);
+  } else if (game.state === G_ST.VICTORY) {
+    drawVictory(ctx, game.score);
+    stopBGMusic();
+  }
+
+  ctx.restore();
+  requestAnimationFrame(loop);
+}
+
+function init() {
+  canvas = document.getElementById('game');
+  ctx = canvas.getContext('2d');
+  resize();
+  window.addEventListener('resize', resize);
+  setupTouchControls();
+  if ('ontouchstart' in window) isMobile = true;
+
+  document.addEventListener('keydown', function(e) {
+    if (game.state === G_ST.MENU && (e.code === 'Enter' || e.code === 'Space')) { startGame(); }
+    else if (game.state === G_ST.GAMEOVER && (e.code === 'Enter' || e.code === 'Space')) { initGame(); game.state = G_ST.MENU; }
+    else if (game.state === G_ST.VICTORY && (e.code === 'Enter' || e.code === 'Space')) { initGame(); game.state = G_ST.MENU; }
+    else if (game.state === G_ST.WAVE_CLEAR && game.waveTimer <= 0) { advanceWaveByInput(); }
+    else if (game.state === G_ST.PLAYING) { initAudio(); }
+  });
+
+  canvas.addEventListener('click', function() {
+    if (game.state === G_ST.MENU) startGame();
+    else if (game.state === G_ST.GAMEOVER) { initGame(); game.state = G_ST.MENU; }
+    else if (game.state === G_ST.VICTORY) { initGame(); game.state = G_ST.MENU; }
+    else if (game.state === G_ST.WAVE_CLEAR && game.waveTimer <= 0) advanceWaveByInput();
+    else if (game.state === G_ST.PLAYING) initAudio();
+  });
+
+  initGame();
+  requestAnimationFrame(loop);
+}
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

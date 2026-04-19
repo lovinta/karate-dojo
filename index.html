@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="description" content="Avicenna's Karate Dojo - Fun karate mini-games for kids">
+  <title>Avicenna's Karate Dojo</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Main Game Canvas - Full Viewport -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Top Bar Overlay -->
+  <div id="topBar">
+    <!-- Belt Display (Top Left) -->
+    <div id="beltDisplay">
+      <div id="beltStripe"></div>
+      <span id="beltLabel">White Belt</span>
+    </div>
+
+    <!-- Star Counter (Top Right) -->
+    <div id="starCounter">
+      <div id="starsContainer">
+        <!-- Stars rendered by JS -->
+      </div>
+      <span id="starCount">0</span>
+    </div>
+  </div>
+
+  <!-- Game Selection Screen -->
+  <div id="gameSelectionScreen" class="screen">
+    <div class="screen-content">
+      <h1 class="dojo-title">Avicenna's Karate Dojo</h1>
+      
+      <div id="gameCardGrid">
+        <!-- Game Card 1: Sensei Says -->
+        <div class="game-card" data-game="sensei-says">
+          <div class="card-illustration">
+            <div class="illustration-content sensei-says-art">
+              <div class="move-indicator">👆</div>
+              <div class="sensei-says-text">Sensei Says</div>
+            </div>
+          </div>
+          <h2 class="card-title">Sensei Says</h2>
+          <p class="card-description">Memory + following instructions</p>
+          <div class="card-reward">
+            <span class="star-icon">⭐</span>
+            <span>Earn 1 Star</span>
+          </div>
+          <button class="play-button">PLAY</button>
+        </div>
+
+        <!-- Game Card 2: Belt Runner -->
+        <div class="game-card" data-game="belt-runner">
+          <div class="card-illustration">
+            <div class="illustration-content belt-runner-art">
+              <div class="runner-lane">
+                <div class="runner-character">🥋</div>
+                <div class="obstacle">🪨</div>
+              </div>
+            </div>
+          </div>
+          <h2 class="card-title">Belt Runner</h2>
+          <p class="card-description">Reaction time + coordination</p>
+          <div class="card-reward">
+            <span class="star-icon">⭐</span>
+            <span>Earn 1 Star</span>
+          </div>
+          <button class="play-button">PLAY</button>
+        </div>
+
+        <!-- Game Card 3: Target Strike -->
+        <div class="game-card" data-game="target-strike">
+          <div class="card-illustration">
+            <div class="illustration-content target-strike-art">
+              <div class="target-crosshair">🎯</div>
+              <div class="target-hit">💥</div>
+            </div>
+          </div>
+          <h2 class="card-title">Target Strike</h2>
+          <p class="card-description">Accuracy + speed</p>
+          <div class="card-reward">
+            <span class="star-icon">⭐</span>
+            <span>Earn 1 Star</span>
+          </div>
+          <button class="play-button">PLAY</button>
+        </div>
+
+        <!-- Game Card 4: Kata Combo -->
+        <div class="game-card" data-game="kata-combo">
+          <div class="card-illustration">
+            <div class="illustration-content kata-combo-art">
+              <div class="combo-sequence">
+                <span class="combo-move punch">👊</span>
+                <span class="combo-arrow">→</span>
+                <span class="combo-move kick">🦵</span>
+                <span class="combo-arrow">→</span>
+                <span class="combo-move jump">⬆️</span>
+              </div>
+            </div>
+          </div>
+          <h2 class="card-title">Kata Combo</h2>
+          <p class="card-description">Rhythm + sequencing</p>
+          <div class="card-reward">
+            <span class="star-icon">⭐</span>
+            <span>Earn 1 Star</span>
+          </div>
+          <button class="play-button">PLAY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Arena (Hidden by default) -->
+  <div id="gameArena" class="screen hidden">
+    <div id="gameHeader">
+      <button id="backButton" class="nav-button">← Back</button>
+      <h2 id="gameTitle">Game</h2>
+      <div id="gameScore">Score: 0</div>
+    </div>
+    
+    <div id="gameControls">
+      <!-- Punch Button (Red) -->
+      <button id="btnPunch" class="control-button punch-button" data-action="punch">
+        <span class="btn-icon">👊</span>
+        <span class="btn-label">Punch</span>
+      </button>
+      
+      <!-- Kick Button (Blue) -->
+      <button id="btnKick" class="control-button kick-button" data-action="kick">
+        <span class="btn-icon">🦵</span>
+        <span class="btn-label">Kick</span>
+      </button>
+      
+      <!-- Jump Button (Green) -->
+      <button id="btnJump" class="control-button jump-button" data-action="jump">
+        <span class="btn-icon">⬆️</span>
+        <span class="btn-label">Jump</span>
+      </button>
+      
+      <!-- Block Button (Yellow) -->
+      <button id="btnBlock" class="control-button block-button" data-action="block">
+        <span class="btn-icon">🛡️</span>
+        <span class="btn-label">Block</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Sensei Mascot Container (Bottom Center) -->
+  <div id="senseiContainer">
+    <canvas id="senseiCanvas" width="200" height="250"></canvas>
+    <div id="senseiSpeech" class="speech-bubble hidden">
+      <p id="senseiText"></p>
+    </div>
+  </div>
+
+  <!-- Belt Promotion Overlay -->
+  <div id="beltPromotionOverlay" class="overlay hidden">
+    <div id="beltPromotionContent">
+      <h2 class="promotion-title">Belt Promotion!</h2>
+      <div id="newBeltDisplay">
+        <div id="oldBelt" class="belt-item">
+          <div class="belt-visual white"></div>
+          <span>White</span>
+        </div>
+        <div class="belt-arrow">→</div>
+        <div id="newBelt" class="belt-item">
+          <div class="belt-visual yellow"></div>
+          <span>Yellow</span>
+        </div>
+      </div>
+      <p id="promotionText">You earned your Yellow Belt!</p>
+      <button id="promotionContinue" class="play-button">Continue</button>
+    </div>
+  </div>
+
+  <!-- Level Complete Overlay -->
+  <div id="levelCompleteOverlay" class="overlay hidden">
+    <div id="levelCompleteContent">
+      <h2 class="complete-title">Level Complete!</h2>
+      <div id="starsEarned">
+        <span class="earned-star">⭐</span>
+        <span class="earned-star">⭐</span>
+        <span class="earned-star">⭐</span>
+      </div>
+      <p id="levelCompleteText">You earned a star!</p>
+      <div class="complete-buttons">
+        <button id="playAgainButton" class="play-button">Play Again</button>
+        <button id="menuButton" class="menu-button">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div id="gameOverOverlay" class="overlay hidden">
+    <div id="gameOverContent">
+      <h2 class="gameover-title">Game Over</h2>
+      <p id="gameOverText">Good effort! Try again!</p>
+      <div class="complete-buttons">
+        <button id="retryButton" class="play-button">Try Again</button>
+        <button id="menuButton2" class="menu-button">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts - Order matters! -->
+  <script src="js/particles.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/sensei.js"></script>
+  <script src="js/games/sensei_says.js"></script>
+  <script src="js/games/belt_runner.js"></script>
+  <script src="js/games/target_strike.js"></script>
+  <script src="js/games/kata_combo.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

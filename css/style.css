@@ -1,0 +1,1051 @@
+/**
+ * Avicenna's Karate Dojo - Stylesheet
+ * Design Language: Bold cartoon martial arts (Doraemon meets Power Rangers)
+ */
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+  /* Color Palette from SPEC */
+  --primary-red: #E63946;
+  --dojo-gold: #FFB703;
+  --belt-white: #F1FAEE;
+  --deep-blue: #1D3557;
+  --grass-green: #06D6A0;
+  --punch-pink: #FF6B9D;
+  
+  /* Extended Colors */
+  --dark-red: #c62d3a;
+  --dark-blue: #152a4a;
+  --light-gold: #ffd54f;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+  
+  /* Belt Colors */
+  --belt-yellow: #FFEB3B;
+  --belt-orange: #FF9800;
+  --belt-green: #4CAF50;
+  --belt-blue: #2196F3;
+  --belt-brown: #795548;
+  --belt-black: #212121;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-round: 50%;
+  
+  /* Transitions */
+  --bounce-ease: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --smooth-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Typography */
+  --font-heading: 'Fredoka One', cursive;
+  --font-body: 'Nunito', sans-serif;
+  
+  /* Z-index layers */
+  --z-canvas: 1;
+  --z-topbar: 100;
+  --z-controls: 100;
+  --z-mascot: 150;
+  --z-overlay: 200;
+  --z-speech: 250;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-body);
+  background: var(--deep-blue);
+  color: var(--belt-white);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ============================================
+   CANVAS
+   ============================================ */
+#gameCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--z-canvas);
+  background: linear-gradient(180deg, var(--deep-blue) 0%, var(--dark-blue) 100%);
+}
+
+/* ============================================
+   TOP BAR
+   ============================================ */
+#topBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  z-index: var(--z-topbar);
+  pointer-events: none;
+}
+
+#topBar > * {
+  pointer-events: auto;
+}
+
+/* Belt Display */
+#beltDisplay {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.3);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(10px);
+}
+
+#beltStripe {
+  width: 60px;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--belt-white);
+  border: 2px solid var(--shadow-color);
+  transition: background var(--bounce-ease) 0.3s;
+}
+
+#beltLabel {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--belt-white);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Belt color states */
+#beltStripe.yellow { background: var(--belt-yellow); }
+#beltStripe.orange { background: var(--belt-orange); }
+#beltStripe.green { background: var(--belt-green); }
+#beltStripe.blue { background: var(--belt-blue); }
+#beltStripe.brown { background: var(--belt-brown); }
+#beltStripe.black { background: var(--belt-black); }
+
+/* Star Counter */
+#starCounter {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  background: rgba(0, 0, 0, 0.3);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(10px);
+}
+
+#starsContainer {
+  display: flex;
+  gap: 2px;
+}
+
+.star {
+  font-size: 20px;
+  opacity: 0.3;
+  transition: all var(--bounce-ease) 0.3s;
+  transform: scale(0.8);
+}
+
+.star.earned {
+  opacity: 1;
+  transform: scale(1);
+  animation: starPop 0.5s var(--bounce-ease);
+}
+
+@keyframes starPop {
+  0% { transform: scale(0.5); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+#starCount {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  color: var(--dojo-gold);
+  min-width: 30px;
+  text-align: center;
+}
+
+/* ============================================
+   SCREENS
+   ============================================ */
+.screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-topbar);
+  transition: opacity 0.3s var(--smooth-ease), visibility 0.3s;
+}
+
+.screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.screen-content {
+  width: 100%;
+  max-width: 600px;
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ============================================
+   GAME SELECTION SCREEN
+   ============================================ */
+#gameSelectionScreen {
+  background: radial-gradient(ellipse at center top, var(--deep-blue) 0%, var(--dark-blue) 100%);
+}
+
+.dojo-title {
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 8vw, 48px);
+  color: var(--dojo-gold);
+  text-shadow: 3px 3px 0 var(--primary-red), 5px 5px 10px rgba(0, 0, 0, 0.3);
+  margin-bottom: var(--spacing-xl);
+  text-align: center;
+  animation: titleBounce 2s var(--bounce-ease) infinite;
+}
+
+@keyframes titleBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Game Card Grid - 2x2 */
+#gameCardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  width: 100%;
+  max-width: 500px;
+}
+
+.game-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all var(--bounce-ease) 0.3s;
+  backdrop-filter: blur(10px);
+}
+
+.game-card:hover {
+  transform: scale(1.05) translateY(-5px);
+  border-color: var(--dojo-gold);
+  box-shadow: 0 10px 30px rgba(255, 183, 3, 0.3);
+}
+
+.game-card:active {
+  transform: scale(0.98);
+}
+
+.card-illustration {
+  width: 100%;
+  aspect-ratio: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.illustration-content {
+  font-size: 48px;
+}
+
+/* Sensei Says illustration */
+.sensei-says-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.sensei-says-text {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--belt-white);
+}
+
+/* Belt Runner illustration */
+.runner-lane {
+  position: relative;
+  font-size: 32px;
+}
+
+.runner-character {
+  position: absolute;
+  animation: runnerBounce 0.5s var(--bounce-ease) infinite;
+}
+
+.obstacle {
+  animation: obstacleMove 1s linear infinite;
+}
+
+@keyframes runnerBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes obstacleMove {
+  0% { transform: translateX(-50px); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(50px); opacity: 0; }
+}
+
+/* Target Strike illustration */
+.target-strike-art {
+  position: relative;
+  font-size: 40px;
+}
+
+.target-crosshair {
+  animation: targetPulse 1s var(--bounce-ease) infinite;
+}
+
+.target-hit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: targetHit 1.5s linear infinite;
+}
+
+@keyframes targetPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes targetHit {
+  0%, 40% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+}
+
+/* Kata Combo illustration */
+.combo-sequence {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.combo-move {
+  font-size: 24px;
+  animation: comboFade 1.5s ease-in-out infinite;
+}
+
+.combo-move:nth-child(1) { animation-delay: 0s; }
+.combo-move:nth-child(3) { animation-delay: 0.3s; }
+.combo-move:nth-child(5) { animation-delay: 0.6s; }
+
+.combo-arrow {
+  color: var(--dojo-gold);
+  font-weight: bold;
+}
+
+@keyframes comboFade {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.card-title {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  color: var(--belt-white);
+  margin-bottom: var(--spacing-xs);
+  text-align: center;
+}
+
+.card-description {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.card-reward {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 12px;
+  color: var(--dojo-gold);
+  margin-bottom: var(--spacing-sm);
+}
+
+.star-icon {
+  font-size: 14px;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+.play-button {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  color: var(--belt-white);
+  background: linear-gradient(145deg, var(--grass-green), #05b88a);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--bounce-ease) 0.2s;
+  box-shadow: 0 4px 0 #048a65, 0 6px 10px rgba(0, 0, 0, 0.2);
+}
+
+.play-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #048a65, 0 8px 15px rgba(0, 0, 0, 0.25);
+}
+
+.play-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #048a65, 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.menu-button {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  color: var(--belt-white);
+  background: linear-gradient(145deg, var(--deep-blue), var(--dark-blue));
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--bounce-ease) 0.2s;
+}
+
+.menu-button:hover {
+  background: linear-gradient(145deg, var(--primary-red), var(--dark-red));
+  border-color: var(--primary-red);
+}
+
+.nav-button {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--belt-white);
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--bounce-ease) 0.2s;
+  backdrop-filter: blur(5px);
+}
+
+.nav-button:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: var(--dojo-gold);
+}
+
+/* ============================================
+   GAME ARENA
+   ============================================ */
+#gameArena {
+  background: transparent;
+  pointer-events: none;
+}
+
+#gameArena:not(.hidden) {
+  pointer-events: auto;
+}
+
+#gameHeader {
+  position: fixed;
+  top: 70px;
+  left: var(--spacing-md);
+  right: var(--spacing-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(10px);
+  z-index: var(--z-controls);
+}
+
+#gameTitle {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  color: var(--dojo-gold);
+}
+
+#gameScore {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  color: var(--belt-white);
+}
+
+/* Game Controls */
+#gameControls {
+  position: fixed;
+  bottom: var(--spacing-xxl);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--spacing-md);
+  z-index: var(--z-controls);
+}
+
+.control-button {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all var(--bounce-ease) 0.15s;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3), 0 6px 10px rgba(0, 0, 0, 0.2);
+}
+
+.control-button:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+.btn-icon {
+  font-size: 32px;
+}
+
+.btn-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--belt-white);
+  text-transform: uppercase;
+}
+
+/* Color-coded buttons */
+.punch-button {
+  background: linear-gradient(145deg, var(--primary-red), var(--dark-red));
+  border-color: #ff6b6b;
+}
+.punch-button:active { background: linear-gradient(145deg, var(--dark-red), var(--primary-red)); }
+
+.kick-button {
+  background: linear-gradient(145deg, #4a90d9, var(--deep-blue));
+  border-color: #6ba3e0;
+}
+.kick-button:active { background: linear-gradient(145deg, var(--deep-blue), #4a90d9); }
+
+.jump-button {
+  background: linear-gradient(145deg, var(--grass-green), #05b88a);
+  border-color: #4ae0b0;
+}
+.jump-button:active { background: linear-gradient(145deg, #05b88a, var(--grass-green)); }
+
+.block-button {
+  background: linear-gradient(145deg, var(--dojo-gold), #e0a500);
+  border-color: #ffc933;
+}
+.block-button:active { background: linear-gradient(145deg, #e0a500, var(--dojo-gold)); }
+
+/* ============================================
+   SENSEI MASCOT CONTAINER
+   ============================================ */
+#senseiContainer {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: var(--z-mascot);
+  animation: mascotBounce 2s var(--bounce-ease) infinite;
+}
+
+#senseiCanvas {
+  width: 150px;
+  height: 188px;
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes mascotBounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-15px); }
+}
+
+#senseiContainer.hidden {
+  display: none;
+}
+
+/* Speech Bubble */
+.speech-bubble {
+  position: relative;
+  background: var(--belt-white);
+  color: var(--deep-blue);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-sm);
+  max-width: 250px;
+  text-align: center;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  animation: bubblePop 0.3s var(--bounce-ease);
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 10px solid transparent;
+  border-top-color: var(--belt-white);
+  border-bottom: 0;
+}
+
+@keyframes bubblePop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ============================================
+   OVERLAYS
+   ============================================ */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-overlay);
+  backdrop-filter: blur(5px);
+  animation: overlayFadeIn 0.3s var(--smooth-ease);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+#beltPromotionContent,
+#levelCompleteContent,
+#gameOverContent {
+  background: linear-gradient(145deg, var(--deep-blue), var(--dark-blue));
+  border: 3px solid var(--dojo-gold);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  animation: contentPop 0.4s var(--bounce-ease);
+}
+
+@keyframes contentPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.promotion-title,
+.complete-title,
+.gameover-title {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  color: var(--dojo-gold);
+  margin-bottom: var(--spacing-lg);
+  text-shadow: 2px 2px 0 var(--primary-red);
+}
+
+/* Belt Promotion */
+#newBeltDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.belt-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.belt-visual {
+  width: 80px;
+  height: 20px;
+  border-radius: 10px;
+  border: 3px solid rgba(0, 0, 0, 0.2);
+  animation: beltGlow 1s var(--bounce-ease) infinite alternate;
+}
+
+.belt-visual.white { background: var(--belt-white); }
+.belt-visual.yellow { background: var(--belt-yellow); }
+.belt-visual.orange { background: var(--belt-orange); }
+.belt-visual.green { background: var(--belt-green); }
+.belt-visual.blue { background: var(--belt-blue); }
+.belt-visual.brown { background: var(--belt-brown); }
+.belt-visual.black { background: var(--belt-black); }
+
+@keyframes beltGlow {
+  from { box-shadow: 0 0 10px currentColor; }
+  to { box-shadow: 0 0 25px currentColor, 0 0 40px currentColor; }
+}
+
+.belt-arrow {
+  font-size: 32px;
+  color: var(--dojo-gold);
+  animation: arrowPulse 0.5s var(--bounce-ease) infinite alternate;
+}
+
+@keyframes arrowPulse {
+  from { transform: translateX(-5px); }
+  to { transform: translateX(5px); }
+}
+
+#promotionText {
+  font-size: 18px;
+  margin-bottom: var(--spacing-lg);
+  color: var(--belt-white);
+}
+
+/* Level Complete Stars */
+#starsEarned {
+  font-size: 48px;
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-sm);
+}
+
+.earned-star {
+  animation: starEarned 0.5s var(--bounce-ease) forwards;
+  opacity: 0;
+}
+
+.earned-star:nth-child(1) { animation-delay: 0.2s; }
+.earned-star:nth-child(2) { animation-delay: 0.4s; }
+.earned-star:nth-child(3) { animation-delay: 0.6s; }
+
+@keyframes starEarned {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+#levelCompleteText {
+  font-size: 18px;
+  margin-bottom: var(--spacing-lg);
+  color: var(--grass-green);
+}
+
+.complete-buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ============================================
+   SCREEN SHAKE ANIMATION
+   ============================================ */
+@keyframes screenShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-5px) rotate(-0.5deg); }
+  20% { transform: translateX(5px) rotate(0.5deg); }
+  30% { transform: translateX(-5px) rotate(-0.5deg); }
+  40% { transform: translateX(5px) rotate(0.5deg); }
+  50% { transform: translateX(-3px); }
+  60% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+  90% { transform: translateX(-1px); }
+}
+
+.shake {
+  animation: screenShake 0.4s var(--smooth-ease);
+}
+
+/* ============================================
+   BOUNCE ANIMATIONS FOR UI
+   ============================================ */
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes bounceInUp {
+  0% { transform: translateY(50px); opacity: 0; }
+  60% { transform: translateY(-10px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 5px currentColor; }
+  50% { box-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+
+.bounce-in {
+  animation: bounceIn 0.5s var(--bounce-ease) forwards;
+}
+
+.bounce-in-up {
+  animation: bounceInUp 0.6s var(--bounce-ease) forwards;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Mobile Portrait */
+@media (max-width: 480px) {
+  .dojo-title {
+    font-size: 28px;
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  #gameCardGrid {
+    gap: var(--spacing-sm);
+    padding: 0 var(--spacing-sm);
+  }
+  
+  .game-card {
+    padding: var(--spacing-sm);
+  }
+  
+  .card-illustration {
+    aspect-ratio: 1;
+    font-size: 32px;
+  }
+  
+  .card-title {
+    font-size: 13px;
+  }
+  
+  .card-description {
+    font-size: 10px;
+    display: none;
+  }
+  
+  .card-reward {
+    font-size: 10px;
+  }
+  
+  .play-button {
+    font-size: 12px;
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+  
+  #gameControls {
+    gap: var(--spacing-sm);
+    bottom: var(--spacing-lg);
+  }
+  
+  .control-button {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .btn-icon {
+    font-size: 28px;
+  }
+  
+  #senseiContainer {
+    bottom: 10px;
+  }
+  
+  #senseiCanvas {
+    width: 100px;
+    height: 125px;
+  }
+  
+  .speech-bubble {
+    max-width: 180px;
+    font-size: 12px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  #beltPromotionContent,
+  #levelCompleteContent,
+  #gameOverContent {
+    padding: var(--spacing-lg);
+  }
+  
+  .promotion-title,
+  .complete-title,
+  .gameover-title {
+    font-size: 24px;
+  }
+  
+  #newBeltDisplay {
+    gap: var(--spacing-md);
+  }
+  
+  .belt-visual {
+    width: 60px;
+    height: 15px;
+  }
+}
+
+/* Mobile Landscape */
+@media (max-height: 500px) and (orientation: landscape) {
+  .dojo-title {
+    font-size: 24px;
+    margin-bottom: var(--spacing-md);
+  }
+  
+  #gameCardGrid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 100%;
+  }
+  
+  .game-card {
+    padding: var(--spacing-xs);
+  }
+  
+  .card-illustration {
+    aspect-ratio: 1;
+    font-size: 24px;
+  }
+  
+  .card-title {
+    font-size: 11px;
+  }
+  
+  .card-description,
+  .card-reward {
+    display: none;
+  }
+  
+  #gameControls {
+    bottom: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
+  
+  .control-button {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .btn-icon {
+    font-size: 24px;
+  }
+  
+  .btn-label {
+    font-size: 8px;
+  }
+  
+  #senseiContainer {
+    display: none;
+  }
+  
+  #gameHeader {
+    top: var(--spacing-sm);
+  }
+}
+
+/* Tablet */
+@media (min-width: 481px) and (max-width: 768px) {
+  .dojo-title {
+    font-size: 36px;
+  }
+  
+  #gameCardGrid {
+    gap: var(--spacing-md);
+  }
+  
+  .card-title {
+    font-size: 15px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 769px) {
+  #gameCardGrid {
+    gap: var(--spacing-lg);
+  }
+  
+  .game-card:hover {
+    transform: scale(1.08) translateY(-8px);
+  }
+  
+  .control-button:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+  }
+}
+
+/* ============================================
+   HIDDEN UTILITY
+   ============================================ */
+.hidden {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  
+  #gameCanvas,
+  #topBar,
+  #senseiContainer,
+  .overlay {
+    display: none;
+  }
+}
