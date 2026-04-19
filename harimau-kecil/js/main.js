@@ -140,7 +140,7 @@
           content: 'Berlaku di atas satu kaki. Kaki pendukung sedikit ditekuk. Kaki yang menendang bergerak ke samping dengan telapak kaki menghadap target.'
         },
         {
-          subtitle: 'Safety First',
+          subtitle: 'Keselamatan Utama',
           content: 'Untuk pemula, tendangan hanya sampai setinggi lutut. Fokus pada kontrol dan teknik, bukan ketinggian.'
         },
         {
