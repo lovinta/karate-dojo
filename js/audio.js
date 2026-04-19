@@ -1,5 +1,5 @@
 /**
- * Avicenna's Karate Dojo - AudioManager
+ * Harimau Kecil - AudioManager
  * Web Audio API sound effects generator
  * All sounds generated programmatically (no external files)
  */

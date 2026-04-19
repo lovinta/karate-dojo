@@ -1,5 +1,5 @@
 /**
- * Avicenna's Karate Dojo - Kata Combo Game
+ * Harimau Kecil - Kata Combo Game
  * Rhythm + sequencing memory game
  */
 

@@ -1,5 +1,5 @@
 /**
- * Avicenna's Karate Dojo - Sensei Says Game
+ * Harimau Kecil - Sensei Says Game
  * Memory + following instructions game
  */
 

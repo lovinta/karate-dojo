@@ -1,5 +1,5 @@
 /**
- * Avicenna's Karate Dojo - Particle System
+ * Harimau Kecil - Particle System
  * Star bursts, confetti, and fireworks effects
  */
 

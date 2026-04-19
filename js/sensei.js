@@ -1,5 +1,5 @@
 /**
- * Avicenna's Karate Dojo - Sensei Mascot
+ * Harimau Kecil - Sensei Mascot
  * Cartoon character drawn with Canvas API + ElevenLabs TTS
  */
 

@@ -1,5 +1,5 @@
 /**
- * Avicenna's Karate Dojo - Belt Runner Game
+ * Harimau Kecil - Belt Runner Game
  * Side-scrolling runner with reaction time challenges
  */
 

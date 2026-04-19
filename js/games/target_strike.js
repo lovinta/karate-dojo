@@ -1,5 +1,5 @@
 /**
- * Avicenna's Karate Dojo - Target Strike Game
+ * Harimau Kecil - Target Strike Game
  * Accuracy + speed target hitting game
  */
 

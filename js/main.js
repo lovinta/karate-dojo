@@ -1,5 +1,5 @@
 /**
- * Avicenna's Karate Dojo - Main Application
+ * Harimau Kecil - Main Application
  * Entry point, state management, and game router
  */
 
