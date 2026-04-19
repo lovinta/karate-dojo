@@ -252,7 +252,7 @@ const UI = {
     DOM.senseiContainer.classList.add('hidden');
     
     DOM.gameTitle.textContent = gameName;
-    DOM.gameScore.textContent = 'Score: 0';
+    DOM.gameScore.textContent = 'Skor: 0';
     
     hideAllOverlays();
   },
@@ -306,7 +306,7 @@ const UI = {
   
   // Update game score display
   updateScore(score) {
-    DOM.gameScore.textContent = `Score: ${score}`;
+    DOM.gameScore.textContent = `Skor: ${score}`;
   },
   
   // Screen shake effect
