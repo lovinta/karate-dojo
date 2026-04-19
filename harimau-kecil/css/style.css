@@ -1,9 +1,9 @@
 /* ========================================
    Harimau Kecil - Karate Dojo CSS
-   Mobile-First Responsive Design
+   Desain Responsif Mobile-First
    ======================================== */
 
-/* CSS Custom Properties */
+/* Properti Kustom CSS */
 :root {
   --color-primary: #FF6B35;
   --color-primary-dark: #e55a2b;
@@ -31,7 +31,7 @@
   --shadow-lg: 0 8px 32px var(--color-shadow);
 }
 
-/* Reset & Base */
+/* Reset & Dasar */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -87,7 +87,7 @@ ul, ol {
   list-style: none;
 }
 
-/* Typography */
+/* Tipografi */
 h1, h2, h3, h4 {
   font-family: var(--font-heading);
   line-height: 1.2;
@@ -103,7 +103,7 @@ p {
   margin-bottom: 1rem;
 }
 
-/* Container */
+/* Kontainer */
 .container {
   width: 100%;
   max-width: 1200px;
@@ -170,7 +170,7 @@ p {
   }
 }
 
-/* Hamburger */
+/* Menu Hamburger */
 .hamburger {
   display: flex;
   flex-direction: column;
@@ -203,7 +203,7 @@ p {
   transform: rotate(-45deg) translate(5px, -6px);
 }
 
-/* Navigation */
+/* Navigasi */
 .nav {
   position: fixed;
   top: 0;
@@ -306,7 +306,7 @@ p {
 }
 
 /* ========================================
-   Buttons
+   Tombol
    ======================================== */
 .btn {
   display: inline-flex;
@@ -376,7 +376,7 @@ p {
 }
 
 /* ========================================
-   Hero Section
+   Bagian Hero
    ======================================== */
 .hero {
   position: relative;
@@ -521,7 +521,7 @@ p {
 }
 
 /* ========================================
-   Sections
+   Bagian-bagian
    ======================================== */
 .section {
   padding: 3rem 0;
@@ -547,7 +547,7 @@ p {
 }
 
 /* ========================================
-   Benefits Cards
+   Kartu Keuntungan
    ======================================== */
 .benefits-grid {
   display: grid;
@@ -600,7 +600,7 @@ p {
 }
 
 /* ========================================
-   Nilai Dojo Badges
+   Lencana Nilai Dojo
    ======================================== */
 .section-nilai {
   background-color: var(--color-white);
@@ -650,7 +650,7 @@ p {
 }
 
 /* ========================================
-   Module Cards
+   Kartu Modul
    ======================================== */
 .modules-grid {
   display: grid;
@@ -827,7 +827,7 @@ p {
 }
 
 /* ========================================
-   Safety Section
+   Bagian Keamanan
    ======================================== */
 .section-keamanan {
   background-color: var(--color-white);
@@ -1009,7 +1009,7 @@ p {
 }
 
 /* ========================================
-   FAQ Accordion
+   FAQ Akordeon
    ======================================== */
 .section-faq {
   background-color: var(--color-white);
@@ -1402,7 +1402,7 @@ p {
 }
 
 /* ========================================
-   Animations
+   Animasi
    ======================================== */
 [data-animate] {
   opacity: 0;
@@ -1424,7 +1424,7 @@ p {
 }
 
 /* ========================================
-   Utility Classes
+   Kelas Utilitas
    ======================================== */
 .sr-only {
   position: absolute;
