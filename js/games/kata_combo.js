@@ -514,7 +514,7 @@ const KataCombo = {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.font = '16px "Nunito", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Tekan tombol atau Arrow Keys: ← Tinju, → Tendang, ↑ Lompat, ↓ Block', cx, y);
+    ctx.fillText('Tekan tombol atau Arrow Keys: ← Tinju, → Tendang, ↑ Lompat, ↓ Tangkis', cx, y);
   },
   
   /**

@@ -372,7 +372,7 @@ const TargetStrike = {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.font = '14px "Nunito", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Klik atau tap target! Z=Tinju, X=Tendang, Space=Lompat', w / 2, h - 20);
+    ctx.fillText('Klik atau tap target! Z=Tinju, X=Tendang', w / 2, h - 20);
   },
   
   /**
