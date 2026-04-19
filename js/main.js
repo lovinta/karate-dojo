@@ -495,6 +495,34 @@ function setupEventListeners() {
     }
   });
   
+  // Canvas click/touch controls (for target-based games like TargetStrike)
+  DOM.gameCanvas.addEventListener('click', (e) => {
+    if (AppState.gameState !== 'playing' || !AppState.currentGame) return;
+    
+    const rect = DOM.gameCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    if (AppState.currentGame.handleClick) {
+      AppState.currentGame.handleClick(x, y);
+    }
+  });
+  
+  // Also support touch events for mobile
+  DOM.gameCanvas.addEventListener('touchstart', (e) => {
+    if (AppState.gameState !== 'playing' || !AppState.currentGame) return;
+    e.preventDefault();
+    
+    const rect = DOM.gameCanvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    if (AppState.currentGame.handleClick) {
+      AppState.currentGame.handleClick(x, y);
+    }
+  }, { passive: false });
+  
   // Overlay buttons
   document.getElementById('playAgainButton')?.addEventListener('click', () => {
     hideAllOverlays();
