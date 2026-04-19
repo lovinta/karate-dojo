@@ -107,7 +107,7 @@ const SenseiSays = {
       
       // Show prompt
       if (this.callbacks.audio) {
-        this.callbacks.audio.speak('Your turn!');
+        this.callbacks.audio.speak('Giliranmu!');
       }
       return;
     }
@@ -218,7 +218,7 @@ const SenseiSays = {
       this.canAct = false;
       setTimeout(() => {
         if (this.callbacks.audio) {
-          this.callbacks.audio.speak('Try again!');
+          this.callbacks.audio.speak('Coba lagi!');
         }
         this.showSequence();
       }, 1500);
@@ -267,7 +267,7 @@ const SenseiSays = {
     ctx.fillStyle = '#FFB703';
     ctx.font = 'bold 24px "Fredoka One", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`Round ${this.round}/${this.maxRounds}`, cx, 120);
+    ctx.fillText(`Putaran ${this.round}/${this.maxRounds}`, cx, 120);
     
     // Draw lives
     this.drawLives(ctx, cx, cy - 100);
@@ -342,7 +342,7 @@ const SenseiSays = {
           ctx.fillStyle = '#FFB703';
           ctx.font = 'bold 28px "Fredoka One", sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText('Sensei Says...', cx, cy - 120);
+          ctx.fillText('Sensei Mengatakan...', cx, cy - 120);
         }
       }
     } else if (this.canAct) {
@@ -350,12 +350,12 @@ const SenseiSays = {
       ctx.fillStyle = '#06D6A0';
       ctx.font = 'bold 28px "Fredoka One", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Your Turn!', cx, cy - 80);
+      ctx.fillText('Giliranmu!', cx, cy - 80);
       
       // Show expected moves count
       ctx.fillStyle = '#F1FAEE';
       ctx.font = '20px "Nunito", sans-serif';
-      ctx.fillText(`Memorize: ${this.currentSequence.join(' → ')}`, cx, cy + 100);
+      ctx.fillText(`Hafal: ${this.currentSequence.join(' → ')}`, cx, cy + 100);
     }
   },
   
@@ -368,7 +368,7 @@ const SenseiSays = {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.font = '18px "Nunito", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Press the buttons or use arrow keys', cx, cy);
+    ctx.fillText('Tekan tombol atau gunakan tombol panah', cx, cy);
   },
   
   /**

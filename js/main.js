@@ -14,7 +14,7 @@ const AppState = {
   gameState: 'menu',      // 'menu' | 'playing' | 'paused' | 'gameover' | 'levelComplete'
   
   // Belt names
-  beltNames: ['White', 'Yellow', 'Orange', 'Green', 'Blue', 'Brown', 'Black'],
+  beltNames: ['Putih', 'Kuning', 'Orange', 'Hijau', 'Biru', 'Coklat', 'Hitam'],
   
   // Stars required per belt level
   starsPerBelt: 10,
@@ -214,7 +214,7 @@ const UI = {
   updateBelt(level, name) {
     const beltClasses = ['white', 'yellow', 'orange', 'green', 'blue', 'brown', 'black'];
     DOM.beltStripe.className = beltClasses[level] || 'white';
-    DOM.beltLabel.textContent = name + ' Belt';
+    DOM.beltLabel.textContent = 'Ikat Pinggang ' + name;
   },
   
   // Update star counter
@@ -268,7 +268,7 @@ const UI = {
     document.getElementById('newBelt').querySelector('.belt-visual').className = 'belt-visual ' + beltClasses[newBelt];
     document.getElementById('newBelt').querySelector('span').textContent = beltName;
     
-    document.getElementById('promotionText').textContent = `You earned your ${beltName} Belt!`;
+    document.getElementById('promotionText').textContent = `Kamu mendapat Ikat Pinggang ${beltName}!`;
     
     DOM.beltPromotionOverlay.classList.remove('hidden');
     
@@ -344,10 +344,10 @@ function startGame(gameId) {
   
   // Map game ID to display name
   const gameNames = {
-    'sensei-says': 'Sensei Says',
-    'belt-runner': 'Belt Runner',
-    'target-strike': 'Target Strike',
-    'kata-combo': 'Kata Combo'
+    'sensei-says': 'Sensei Mengatakan',
+    'belt-runner': 'Pelari Ikat Pinggang',
+    'target-strike': 'Pukul Target',
+    'kata-combo': 'Kata Kombo'
   };
   
   UI.showGameArena(gameNames[gameId] || 'Game');
@@ -399,7 +399,7 @@ function endGame(won) {
     
     // Play sensei congratulations
     if (sensei) {
-      const messages = ['Great job!', 'Awesome!', 'You did it!', 'Super strong!'];
+      const messages = ['Kerja bagus!', 'Hebat!', 'Kamu berhasil!', 'Kuat sekali!'];
       sensei.setExpression('happy');
       sensei.speak(messages[Math.floor(Math.random() * messages.length)]);
     }
@@ -411,7 +411,7 @@ function endGame(won) {
     
     if (sensei) {
       sensei.setExpression('sad');
-      sensei.speak('Try again - you\'ve got this!');
+      sensei.speak('Coba lagi - kamu pasti bisa!');
     }
   }
   
@@ -672,7 +672,7 @@ function initApp() {
   // Start game loop
   requestAnimationFrame(gameLoop);
   
-  console.log('🥋 Karate Dojo initialized!');
+  console.log('🥋 Dojo Harimau Kecil dimulai!');
   console.log('⭐ Stars:', AppState.stars);
   console.log('🎖️ Belt:', AppState.beltNames[AppState.beltLevel]);
 }

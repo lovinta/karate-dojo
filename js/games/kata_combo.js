@@ -121,7 +121,7 @@ const KataCombo = {
     
     // Announce combo
     if (this.callbacks.audio) {
-      this.callbacks.audio.speak(`Combo ${this.comboNumber}!`);
+      this.callbacks.audio.speak(`Kombo ${this.comboNumber}!`);
     }
     
     setTimeout(() => this.showNextMove(), 500);
@@ -139,7 +139,7 @@ const KataCombo = {
       this.lastInputTime = Date.now();
       
       if (this.callbacks.audio) {
-        this.callbacks.audio.speak('Your turn!');
+        this.callbacks.audio.speak('Giliranmu!');
       }
       return;
     }
@@ -203,7 +203,7 @@ const KataCombo = {
     if (this.playerInput.length === this.currentCombo.length) {
       this.isPlayerTurn = false;
       this.score += 100 * this.comboLength;
-      this.showFeedback('Perfect!', '#FFB703');
+      this.showFeedback('Sempurna!', '#FFB703');
       
       // Particles
       if (this.callbacks.particles) {
@@ -236,7 +236,7 @@ const KataCombo = {
     
     setTimeout(() => {
       if (this.callbacks.audio) {
-        this.callbacks.audio.speak('Try again!');
+        this.callbacks.audio.speak('Coba lagi!');
       }
       this.showCombo();
     }, 1500);
@@ -262,10 +262,10 @@ const KataCombo = {
       // Timed out - restart current combo
       this.playerInput = [];
       this.inputIndex = 0;
-      this.showFeedback('Too slow!', '#E63946');
+      this.showFeedback('Terlalu lambat!', '#E63946');
       
       if (this.callbacks.audio) {
-        this.callbacks.audio.speak('Too slow! Try again.');
+        this.callbacks.audio.speak('Terlalu lambat! Coba lagi.');
       }
       
       setTimeout(() => this.showCombo(), 1500);
@@ -363,7 +363,7 @@ const KataCombo = {
     ctx.fillStyle = '#FFB703';
     ctx.font = 'bold 24px "Fredoka One", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`Combo ${this.comboNumber}/${this.combosToWin}`, cx, y);
+    ctx.fillText(`Kombo ${this.comboNumber}/${this.combosToWin}`, cx, y);
   },
   
   /**
@@ -386,12 +386,12 @@ const KataCombo = {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
       ctx.font = '20px "Nunito", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Watch carefully...', cx, cy - 80);
+      ctx.fillText('Perhatikan baik-baik...', cx, cy - 80);
     } else if (this.isPlayerTurn) {
       ctx.fillStyle = '#06D6A0';
       ctx.font = '20px "Nunito", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Your turn! Repeat the combo', cx, cy - 80);
+      ctx.fillText('Giliranmu! Ulangi kombo', cx, cy - 80);
     }
   },
   
@@ -514,7 +514,7 @@ const KataCombo = {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.font = '16px "Nunito", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Use buttons or Arrow Keys: ← Punch, → Kick, ↑ Jump, ↓ Block', cx, y);
+    ctx.fillText('Tekan tombol atau Arrow Keys: ← Tinju, → Tendang, ↑ Lompat, ↓ Block', cx, y);
   },
   
   /**

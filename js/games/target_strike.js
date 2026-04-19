@@ -358,21 +358,21 @@ const TargetStrike = {
     ctx.fillStyle = '#FFB703';
     ctx.font = 'bold 24px "Fredoka One", sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(`Score: ${this.score}`, 20, 35);
+    ctx.fillText(`Skor: ${this.score}`, 20, 35);
     
     // Hits/Misses
     ctx.fillStyle = '#06D6A0';
     ctx.font = '16px "Nunito", sans-serif';
-    ctx.fillText(`Hits: ${this.hits}`, 20, 60);
+    ctx.fillText(`Tebasan: ${this.hits}`, 20, 60);
     
     ctx.fillStyle = '#E63946';
-    ctx.fillText(`Misses: ${this.misses}`, 20, 80);
+    ctx.fillText(`Terbobol: ${this.misses}`, 20, 80);
     
     // Instructions
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.font = '14px "Nunito", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Click or tap targets! Z=Punch, X=Kick, Space=Jump', w / 2, h - 20);
+    ctx.fillText('Klik atau tap target! Z=Tinju, X=Tendang, Space=Lompat', w / 2, h - 20);
   },
   
   /**

@@ -23,7 +23,7 @@
     <!-- Belt Display (Top Left) -->
     <div id="beltDisplay">
       <div id="beltStripe"></div>
-      <span id="beltLabel">White Belt</span>
+      <span id="beltLabel">Ikat Pinggang Putih</span>
     </div>
 
     <!-- Star Counter (Top Right) -->
@@ -49,13 +49,13 @@
               <div class="sensei-says-text">Sensei Says</div>
             </div>
           </div>
-          <h2 class="card-title">Sensei Says</h2>
-          <p class="card-description">Memory + following instructions</p>
+          <h2 class="card-title">Sensei Mengatakan</h2>
+          <p class="card-description">Memori + ikuti instruksi</p>
           <div class="card-reward">
             <span class="star-icon">⭐</span>
-            <span>Earn 1 Star</span>
+            <span>Raih 1 Bintang</span>
           </div>
-          <button class="play-button">PLAY</button>
+          <button class="play-button">MAIN</button>
         </div>
 
         <!-- Game Card 2: Belt Runner -->
@@ -68,13 +68,13 @@
               </div>
             </div>
           </div>
-          <h2 class="card-title">Belt Runner</h2>
-          <p class="card-description">Reaction time + coordination</p>
+          <h2 class="card-title">Pelari Ikat Pinggang</h2>
+          <p class="card-description">Waktu reaksi + koordinasi</p>
           <div class="card-reward">
             <span class="star-icon">⭐</span>
-            <span>Earn 1 Star</span>
+            <span>Raih 1 Bintang</span>
           </div>
-          <button class="play-button">PLAY</button>
+          <button class="play-button">MAIN</button>
         </div>
 
         <!-- Game Card 3: Target Strike -->
@@ -85,13 +85,13 @@
               <div class="target-hit">💥</div>
             </div>
           </div>
-          <h2 class="card-title">Target Strike</h2>
-          <p class="card-description">Accuracy + speed</p>
+          <h2 class="card-title">Pukul Target</h2>
+          <p class="card-description">Akurasi + kecepatan</p>
           <div class="card-reward">
             <span class="star-icon">⭐</span>
-            <span>Earn 1 Star</span>
+            <span>Raih 1 Bintang</span>
           </div>
-          <button class="play-button">PLAY</button>
+          <button class="play-button">MAIN</button>
         </div>
 
         <!-- Game Card 4: Kata Combo -->
@@ -107,13 +107,13 @@
               </div>
             </div>
           </div>
-          <h2 class="card-title">Kata Combo</h2>
-          <p class="card-description">Rhythm + sequencing</p>
+          <h2 class="card-title">Kata Kombo</h2>
+          <p class="card-description">Ritme + urutan</p>
           <div class="card-reward">
             <span class="star-icon">⭐</span>
-            <span>Earn 1 Star</span>
+            <span>Raih 1 Bintang</span>
           </div>
-          <button class="play-button">PLAY</button>
+          <button class="play-button">MAIN</button>
         </div>
       </div>
     </div>
@@ -122,9 +122,9 @@
   <!-- Game Arena (Hidden by default) -->
   <div id="gameArena" class="screen hidden">
     <div id="gameHeader">
-      <button id="backButton" class="nav-button">← Back</button>
+      <button id="backButton" class="nav-button">← Kembali</button>
       <h2 id="gameTitle">Game</h2>
-      <div id="gameScore">Score: 0</div>
+      <div id="gameScore">Skor: 0</div>
     </div>
     
     <div id="gameControls">
@@ -165,7 +165,7 @@
   <!-- Belt Promotion Overlay -->
   <div id="beltPromotionOverlay" class="overlay hidden">
     <div id="beltPromotionContent">
-      <h2 class="promotion-title">Belt Promotion!</h2>
+      <h2 class="promotion-title">Naik Ikat Pinggang!</h2>
       <div id="newBeltDisplay">
         <div id="oldBelt" class="belt-item">
           <div class="belt-visual white"></div>
@@ -174,26 +174,26 @@
         <div class="belt-arrow">→</div>
         <div id="newBelt" class="belt-item">
           <div class="belt-visual yellow"></div>
-          <span>Yellow</span>
+          <span>Kuning</span>
         </div>
       </div>
-      <p id="promotionText">You earned your Yellow Belt!</p>
-      <button id="promotionContinue" class="play-button">Continue</button>
+      <p id="promotionText">Kamu mendapat Ikat Pinggang Kuning!</p>
+      <button id="promotionContinue" class="play-button">Lanjut</button>
     </div>
   </div>
 
   <!-- Level Complete Overlay -->
   <div id="levelCompleteOverlay" class="overlay hidden">
     <div id="levelCompleteContent">
-      <h2 class="complete-title">Level Complete!</h2>
+      <h2 class="complete-title">Level Selesai!</h2>
       <div id="starsEarned">
         <span class="earned-star">⭐</span>
         <span class="earned-star">⭐</span>
         <span class="earned-star">⭐</span>
       </div>
-      <p id="levelCompleteText">You earned a star!</p>
+      <p id="levelCompleteText">Kamu mendapat satu bintang!</p>
       <div class="complete-buttons">
-        <button id="playAgainButton" class="play-button">Play Again</button>
+        <button id="playAgainButton" class="play-button">Main Lagi</button>
         <button id="menuButton" class="menu-button">Menu</button>
       </div>
     </div>
@@ -202,10 +202,10 @@
   <!-- Game Over Overlay -->
   <div id="gameOverOverlay" class="overlay hidden">
     <div id="gameOverContent">
-      <h2 class="gameover-title">Game Over</h2>
-      <p id="gameOverText">Good effort! Try again!</p>
+      <h2 class="gameover-title">Permainan Selesai</h2>
+      <p id="gameOverText">Semangat! Coba lagi!</p>
       <div class="complete-buttons">
-        <button id="retryButton" class="play-button">Try Again</button>
+        <button id="retryButton" class="play-button">Coba Lagi</button>
         <button id="menuButton2" class="menu-button">Menu</button>
       </div>
     </div>
